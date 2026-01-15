@@ -404,16 +404,10 @@ class TraceMoePlugin(Star):
 
     async def _handle_waiting_image(self, event: AstrMessageEvent, state: dict, session_key: str):
         """处理用户在等待图片输入状态中的消息"""
-        # 清除等待状态，防止重复触发
-        if session_key in self.user_states:
-            del self.user_states[session_key]
-        if session_key in self.timeout_tasks:
-            self.timeout_tasks[session_key].cancel()
-            del self.timeout_tasks[session_key]
-            
         img_buffer = await self._get_image_data_by_priority(event)
         
         if img_buffer:
+            self._clear_waiting_states_before_search(session_key)
             try:
                 logger.info(f"会话 {session_key} 开始搜索")
                 yield event.plain_result("🔍 正在搜索动漫场景，请稍候...")
@@ -427,14 +421,7 @@ class TraceMoePlugin(Star):
         else:
             logger.info(f"会话 {session_key} 的等待消息未包含图片")
             yield event.plain_result("请发送一张图片")
-            # 恢复等待状态供继续等待
-            self.user_states[session_key] = {
-                "step": "waiting_image",
-                "timestamp": time.time(),
-                "event": event,
-            }
-            timeout_task = asyncio.create_task(self._timeout_check(session_key))
-            self.timeout_tasks[session_key] = timeout_task
+            state["timestamp"] = time.time()
             event.stop_event()
 
     @filter.command("搜番")
@@ -453,9 +440,6 @@ class TraceMoePlugin(Star):
         3. 无图片 → 进入等待模式
         """
         session_key = self._get_session_key(event)
-        
-        # 清除该用户的任何现有等待状态，防止重复触发
-        self._clear_waiting_states_before_search(session_key)
         
         try:
             img_data = await self._get_image_data_by_priority(event)
