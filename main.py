@@ -372,7 +372,9 @@ class TraceMoePlugin(Star):
         except asyncio.CancelledError:
             # 任务被取消，说明用户已经发送了图片
             pass
-        except Exception as e:
+        except BaseException as e:
+            if not isinstance(e, Exception):
+                raise
             logger.warning(f"超时任务异常: {e}")
 
     # ============== 消息处理器 ==============
