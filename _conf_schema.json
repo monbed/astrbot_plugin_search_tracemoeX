@@ -23,5 +23,12 @@
     "description": "启用图片预览",
     "default": true,
     "hint": "是否在搜索结果中显示第一条结果的预览图片。"
+  },
+
+  "search_params_timeout": {
+    "type": "int",
+    "description": "等待搜索参数的超时时间",
+    "default": 30,
+    "hint": "用户进入等待模式后，等待发送图片的最大时间（秒）。超过此时间后操作将被取消。"
   }
 }
